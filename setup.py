@@ -10,5 +10,6 @@ setup(
     ],
     packages=[
         'users'
-    ]
+    ],
+    scripts=['bin/main']
 )

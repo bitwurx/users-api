@@ -12,7 +12,7 @@ test:
   services:
     - mariadb
   script:
-    - py.test test
+    - tox
 
 variables:
   MYSQL_DATABASE: alicia

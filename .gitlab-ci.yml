@@ -1,0 +1,15 @@
+image: python:3.5
+
+before_script:
+  - pip install -r requirements.txt
+  - python setup.py install
+
+test:
+  services:
+    - mariadb
+  script:
+    - py.test test
+
+variables:
+  MYSQL_DATABASE: alicia
+  MYSQL_ROOT_PASSWORD: IXocx/FJV7jwVQ+DS0RagxeZiUD24Vlrp0LL6UpRfOHx

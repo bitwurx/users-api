@@ -3,5 +3,6 @@ __pycache__
 build
 dist
 *.egg-info
+.bash_history
 .python_history
 .cache

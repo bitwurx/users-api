@@ -25,6 +25,13 @@ WHERE
     id = %s;
 '''
 
+DELETE_USER = '''\
+DELETE FROM
+    `users`
+WHERE
+    id = %s;
+'''
+
 async def create(cursor, username, email, password):
     """Create a new user record in the database
 
@@ -69,3 +76,14 @@ async def read(cursor, user_id):
         raise exceptions.UserNotFoundError()
 
     return user
+
+async def delete(cursor, user_id):
+    """Delete a user record the database
+
+    :param cursor: the mariadb database cursor
+    :type: pymysql.cursors.DictCursor
+    :param user_id: the id of the user
+    :type user_id: int
+    """
+
+    cursor.execute(DELETE_USER, (user_id,))

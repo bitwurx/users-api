@@ -68,6 +68,15 @@ def test_read_fetches_user_record():
     coro = crud.read(mock_cursor, 1)
     user = asyncio.get_event_loop().run_until_complete(coro)
 
+    mock_cursor.execute.assert_called_with('''\
+SELECT
+    *
+FROM
+    `users`
+WHERE
+    id = %s;
+''', (1,)
+    )
     assert user == {'id': 1,
                     'username': 'joe',
                     'email': 'joe@schmoe.com',
@@ -86,3 +95,17 @@ def test_read_raises_exception_if_user_not_found():
         message = e.args[0]
 
     assert message == 'provided user id does not exist'
+
+
+def test_delete_removes_the_user_record():
+    mock_cursor = mock.MagicMock()
+    coro = crud.delete(mock_cursor, 3)
+    asyncio.get_event_loop().run_until_complete(coro)
+
+    mock_cursor.execute.assert_called_with('''\
+DELETE FROM
+    `users`
+WHERE
+    id = %s;
+''', (3,)
+    )

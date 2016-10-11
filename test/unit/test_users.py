@@ -2,6 +2,8 @@ import asyncio
 
 from unittest import mock
 
+import pymysql.err
+
 from users import crud
 from users import exceptions
 
@@ -31,7 +33,7 @@ FROM
     `users`
 WHERE
     id = %s;
-''', (1))
+''', (1,))
     ])
 
     assert result == {'id': 1,
@@ -46,7 +48,7 @@ def test_create_throws_exception_if_username_exists():
 
     message = None
     mock_cursor = mock.MagicMock()
-    mock_cursor.execute.side_effect = raise_exists
+    mock_cursor.execute.side_effect = pymysql.err.IntegrityError
     coro = crud.create(mock_cursor, 'joe', 'joe@schmoe.com', 'password1')
 
     try:
@@ -55,3 +57,32 @@ def test_create_throws_exception_if_username_exists():
         message = e.args[0]
 
     assert message == 'provided username already exists'
+
+
+def test_read_fetches_user_record():
+    mock_cursor = mock.MagicMock()
+    mock_cursor.fetchone.return_value = {'id': 1,
+                                         'username': 'joe',
+                                         'email': 'joe@schmoe.com',
+                                         'password': 'abcxyz'}
+    coro = crud.read(mock_cursor, 1)
+    user = asyncio.get_event_loop().run_until_complete(coro)
+
+    assert user == {'id': 1,
+                    'username': 'joe',
+                    'email': 'joe@schmoe.com',
+                    'password': 'abcxyz'}
+
+
+def test_read_raises_exception_if_user_not_found():
+    message = None
+    mock_cursor = mock.MagicMock()
+    mock_cursor.fetchone.return_value = None
+    coro = crud.read(mock_cursor, 2)
+
+    try:
+        asyncio.get_event_loop().run_until_complete(coro)
+    except exceptions.UserNotFoundError as e:
+        message = e.args[0]
+
+    assert message == 'provided user id does not exist'

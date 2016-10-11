@@ -4,6 +4,9 @@
 """
 
 import bcrypt
+import pymysql.err
+
+from users import exceptions
 
 
 INSERT_USER = '''\
@@ -38,7 +41,31 @@ async def create(cursor, username, email, password):
     """
 
     password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-    user_id = cursor.execute(INSERT_USER, (username, email, password,))
-    cursor.execute(SELECT_USER_BY_ID, (user_id))
+
+    try:
+        user_id = cursor.execute(INSERT_USER, (username, email, password,))
+        cursor.execute(SELECT_USER_BY_ID, (user_id,))
+    except pymysql.err.IntegrityError:
+        raise exceptions.UserExistsError()
 
     return cursor.fetchone()
+
+
+async def read(cursor, user_id):
+    """Fetch a user record from the database
+
+    :param cursor: the mariadb database cursor
+    :type: pymysql.cursors.DictCursor
+    :param user_id: the id of the user
+    :type user_id: int
+    :return: the user record
+    :rtype: dict
+    """
+
+    cursor.execute(SELECT_USER_BY_ID, (user_id,))
+    user = cursor.fetchone()
+
+    if user is None:
+        raise exceptions.UserNotFoundError()
+
+    return user

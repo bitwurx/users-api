@@ -6,3 +6,4 @@ dist
 .bash_history
 .python_history
 .cache
+.coverage

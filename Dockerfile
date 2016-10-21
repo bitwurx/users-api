@@ -6,4 +6,8 @@ WORKDIR /root
 RUN pip install -r requirements.txt
 RUN python setup.py install
 
-CMD main
+RUN chmod +x docker-entrypoint.sh
+
+ENTRYPOINT ["./docker-entrypoint.sh"]
+
+EXPOSE 5000

@@ -4,13 +4,14 @@ setup(
     name='users',
     version='0.0.1',
     install_requires=[
-        'aiohttp',
         'bcrypt',
-        'cchardet',
-        'PyMySQL'
+        'pymysql',
+        'sqlalchemy'
     ],
     packages=[
         'users'
     ],
-    scripts=['bin/main']
+    scripts=[
+        'bin/main'
+    ]
 )

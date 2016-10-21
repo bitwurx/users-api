@@ -4,13 +4,11 @@
 """
 
 import os
-import time
 
 import bcrypt
 
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
 
 

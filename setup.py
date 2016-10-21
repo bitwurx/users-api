@@ -5,6 +5,8 @@ setup(
     version='0.0.1',
     install_requires=[
         'bcrypt',
+        'falcon',
+        'gunicorn',
         'pymysql',
         'sqlalchemy'
     ],

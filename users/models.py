@@ -4,11 +4,13 @@
 """
 
 import os
+import time
 
 import bcrypt
 
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -32,10 +34,14 @@ class User(Base):
         return '<User: %s, %s>' % (self.username, self.email)
 
 
-engine = create_engine('mysql+pymysql://{user}:{pwd}@{host}/{db}'.format(
-    user='root',
-    pwd=os.environ.get('MYSQL_ROOT_PASSWORD'),
-    host='mariadb',
-    db=os.environ.get('MYSQL_DATABASE')
-))
-Base.metadata.create_all(engine)
+def get_engine():
+    host = 'mysql+pymysql://{user}:{pwd}@{host}/{db}'.format(
+        user='root',
+        pwd=os.environ.get('MYSQL_ROOT_PASSWORD'),
+        host='mariadb',
+        db=os.environ.get('MYSQL_DATABASE')
+    )
+    engine = create_engine(host)
+    Base.metadata.create_all(engine)
+
+    return engine

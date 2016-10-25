@@ -20,8 +20,8 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     email = Column(String(50))
-    username = Column(String(50))
-    password = Column(String(50))
+    username = Column(String(50), unique=True)
+    password = Column(String(255))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

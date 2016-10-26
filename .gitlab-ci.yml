@@ -15,5 +15,4 @@ test:
     - tox
 
 variables:
-  MYSQL_DATABASE: alicia
-  MYSQL_ROOT_PASSWORD: IXocx/FJV7jwVQ+DS0RagxeZiUD24Vlrp0LL6UpRfOHx
+  ARANGO_ROOT_PASSWORD: IXocx/FJV7jwVQ+DS0RagxeZiUD24Vlrp0LL6UpRfOHx

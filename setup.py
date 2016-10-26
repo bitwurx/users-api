@@ -5,9 +5,9 @@ setup(
     version='0.0.1',
     install_requires=[
         'bcrypt',
+        'python-arango',
         'tornado',
-        'pymysql',
-        'sqlalchemy'
+        'raven',
     ],
     packages=[
         'users'

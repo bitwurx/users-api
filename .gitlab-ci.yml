@@ -10,7 +10,7 @@ before_script:
 test:
   stage: test
   services:
-    - mariadb
+    - arangodb
   script:
     - tox
 

@@ -5,11 +5,13 @@ services:
     env_file: .env
     image: users
     links:
-    - mariadb
+    - arangodb
     ports:
     - 8000:8000
     volumes:
     - ./:/root
-  mariadb:
-    image: mariadb
+  arangodb:
+    image: arangodb
     env_file: .env
+    volumes:
+    - /tmp/arangodb:/var/lib/arangodb3

@@ -55,8 +55,6 @@ class UsersResourceV1(tornado.web.RequestHandler):
         """Create a new user account
         """
 
-        global users
-
         response = {}
 
         try:

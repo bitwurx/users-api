@@ -1,3 +1,7 @@
 #!/bin/bash
 
-main
+if [ "$1" == "start-server" ]; then
+    main
+else
+    exec "$@"
+fi

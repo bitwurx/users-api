@@ -1,1 +1,6 @@
+bcrypt
+cerberus
+python-arango
+tornado
+raven
 tox

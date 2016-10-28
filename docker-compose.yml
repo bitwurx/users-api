@@ -7,7 +7,7 @@ services:
     links:
     - arangodb
     ports:
-    - 8000:8000
+    - 8000:80
     volumes:
     - ./:/root
   arangodb:

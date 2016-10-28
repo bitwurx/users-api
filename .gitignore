@@ -1,9 +1,9 @@
+*.egg-info
 __pycache__
 .tox
-build
-dist
-*.egg-info
 .bash_history
-.python_history
 .cache
 .coverage
+.python_history
+build
+dist

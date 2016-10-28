@@ -1,5 +1,8 @@
 image: docker
 
+services:
+  - docker:dind
+
 stages:
   - build
   - test
@@ -8,8 +11,6 @@ build:
   stage: build
   script:
   - docker build -t users .
-  services:
-  - docker:dind
 
 test:
   stage: test

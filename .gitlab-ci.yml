@@ -1,4 +1,4 @@
-image: docker:latest
+image: docker
 
 stages:
   - build
@@ -8,6 +8,8 @@ build:
   stage: build
   script:
   - docker build -t users .
+  services:
+  - docker:dind
 
 test:
   stage: test

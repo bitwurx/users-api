@@ -7,6 +7,8 @@ import copy
 import os
 
 import arango
+import arango.exceptions
+
 import bcrypt
 import cerberus
 
@@ -41,14 +43,17 @@ def connect_arango():
     except arango.exceptions.CollectionCreateError:
         users = db.collection('users')
 
+    users.add_hash_index(fields=User.unique, unique=True)
+
 
 class User(object):
     """User database model class
     """
 
-    schema = {'username': {'type': 'string'},
-              'password': {'type': 'string'},
-              'email': {'type': 'string'}}
+    schema = {'username': {'type': 'string', 'required': True},
+              'password': {'type': 'string', 'required': True},
+              'email': {'type': 'string', 'required': True}}
+    unique = ('username',)
 
     def __init__(self, **kwargs):
         """User constructor method
@@ -60,20 +65,34 @@ class User(object):
 
     def create(self):
         """Create the database resource record
+
+        :raises: users.exceptions.ConflictError if username exists
+        :return: the created user record
+        :rtype: dict
         """
 
+        global users
+
+        self.validate()
         password = bcrypt.hashpw(self.password.encode(), bcrypt.gensalt())
         data = {'username': self.username,
                 'password': password.decode(),
                 'email': self.email}
-        meta = users.insert(data)
-        user = copy.copy(data)
-        user['id'] = meta['_key']
 
-        return user
+        try:
+            meta = users.insert(data)
+        except arango.exceptions.DocumentInsertError:
+            raise exceptions.ConflictError(fields=self.unique)
+        else:
+            user = copy.copy(data)
+            user['id'] = meta['_key']
+
+            return user
 
     def validate(self):
         """Validate the model instance data
+
+        :raises: users.exceptions.BadRequestError if validation fails
         """
 
         document = {'username': self.username,

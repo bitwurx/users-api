@@ -61,7 +61,7 @@ class UsersResourceV1(tornado.web.RequestHandler):
             body = parse_json_body(self.request.body.decode())
             user = User(**body).create()
             response = make_response(data=user)
-        except BadRequestError as e:
+        except Exception as e:
             response = e.response()
 
         self.write(json.dumps(response, indent=4))

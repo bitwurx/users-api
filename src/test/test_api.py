@@ -7,6 +7,7 @@ from users.api import make_response, parse_json_body
 from users.api import (
     UsersResourceV1
 )
+from users.exceptions import BadRequestError, ConflictError
 
 
 def test_parse_json_body_returns_successfully_parsed_json_body():
@@ -48,30 +49,62 @@ def test_UsersResource_post_creates_user_document(MockUser):
     MockUser.assert_called_with(**{'username': 'joe',
                                    'password': 'test',
                                    'email': 'joe@schmoe.com'})
-    assert '"code": 200' in \
-        str(resource.write.mock_calls[0])
-    assert '"status": "success"' in \
-        str(resource.write.mock_calls[0])
-    assert '"username": "joe"' in \
-        str(resource.write.mock_calls[0])
-    assert '"password": "test"' in \
-        str(resource.write.mock_calls[0])
-    assert '"email": "joe@schmoe.com"' in \
-        str(resource.write.mock_calls[0])
+
+    response = json.loads(resource.write.mock_calls[0][1][0])
+    assert response['code'] == 200
+    assert response['status'] == 'success'
+    assert response['data'] == {
+        'id': 28918,
+        'username': 'joe',
+        'password': 'test',
+        'email': 'joe@schmoe.com'
+    }
 
 
-def test_UsersResource_post_sends_error_on_exception():
+def test_UsersResource_post_sends_decode_error_on_exception():
     request = mock.Mock()
     request.body = b'[}]'
-    resource = UsersResourceV1(mock.MagicMock(), mock.Mock())
-    resource.request = request
+    resource = UsersResourceV1(mock.MagicMock(), request)
     resource.write = mock.Mock()
     resource.post()
-    assert '"code": 400' in \
-        str(resource.write.mock_calls[0])
-    assert '"message": "Expecting value: line 1 column 2 (char 1)"' in \
-        str(resource.write.mock_calls[0])
-    assert '"data": "JSONDecodeError"' in \
-        str(resource.write.mock_calls[0])
-    assert '"status": "error"' in \
-        str(resource.write.mock_calls[0])
+    response = json.loads(resource.write.mock_calls[0][1][0])
+    assert response['code'] == 400
+    assert response['status'] == 'error'
+    assert response['message'] == 'Expecting value: line 1 column 2 (char 1)'
+    assert response['data'] == 'JSONDecodeError'
+
+
+@mock.patch('users.api.User')
+def test_UsersResource_post_sends_conflict_error_on_exception(MockUser):
+    def mock_create(*args, **kwargs):
+        raise ConflictError(fields=('username',))
+    MockUser().create.side_effect = mock_create
+    request = mock.Mock()
+    request.body = b'{}'
+    resource = UsersResourceV1(mock.MagicMock(), request)
+    resource.write = mock.Mock()
+    resource.post()
+    response = json.loads(resource.write.mock_calls[0][1][0])
+    assert response['code'] == 409
+    assert response['status'] == 'error'
+    assert response['message'] == 'username field(s) must be unique'
+    assert response['data'] == 'ConflictError'
+
+
+@mock.patch('users.api.User')
+def test_UsersResource_post_sends_valiation_error_on_exception(MockUser):
+    def mock_create(*args, **kwargs):
+        raise BadRequestError(json.dumps(errors), 'ValidationError')
+
+    MockUser().create.side_effect = mock_create
+    errors = {'email': ['null value not allowed']}
+    request = mock.Mock()
+    request.body = b'{"username": "joe", "password": "password1"}'
+    resource = UsersResourceV1(mock.MagicMock(), request)
+    resource.write = mock.Mock()
+    resource.post()
+    response = json.loads(resource.write.mock_calls[0][1][0])
+    assert response['code'] == 400
+    assert response['status'] == 'error'
+    assert response['message'] == json.dumps(errors)
+    assert response['data'] == 'ValidationError'

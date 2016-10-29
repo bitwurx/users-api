@@ -5,12 +5,12 @@ stages:
 build:
   stage: build
   script:
-  - docker build -t users .
+  - sudo docker build -t users .
 
 test:
   stage: test
   script:
-  - docker run -it -e ARANGO_ROOT_PASSWORD=$ARANGO_ROOT_PASSWORD users tox
+  - sudo docker run -it -e ARANGO_ROOT_PASSWORD=$ARANGO_ROOT_PASSWORD users tox
 
 variables:
   ARANGO_ROOT_PASSWORD: IXocx/FJV7jwVQ+DS0RagxeZiUD24Vlrp0LL6UpRfOHx

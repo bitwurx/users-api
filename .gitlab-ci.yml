@@ -1,8 +1,3 @@
-image: docker
-
-services:
-  - docker:dind
-
 stages:
   - build
   - test
@@ -14,10 +9,8 @@ build:
 
 test:
   stage: test
-  services:
-  - arangodb
   script:
-  - docker run -i -e ARANGO_ROOT_PASSWORD=$ARANGO_ROOT_PASSWORD users tox
+  - docker run -it -e ARANGO_ROOT_PASSWORD=$ARANGO_ROOT_PASSWORD users tox
 
 variables:
   ARANGO_ROOT_PASSWORD: IXocx/FJV7jwVQ+DS0RagxeZiUD24Vlrp0LL6UpRfOHx

@@ -1,16 +1,22 @@
 stages:
   - build
   - test
+  - docker_push
 
 build:
   stage: build
   script:
-  - docker build -t users .
+  - docker build -t registry.gitlab.com/project-alicia/users .
 
 test:
   stage: test
   script:
   - docker run -i -e ARANGO_ROOT_PASSWORD=$ARANGO_ROOT_PASSWORD users tox
+
+docker_push:
+  stage: docker_push
+  script:
+  - docker push registry.gitlab.com/project-alicia/users
 
 variables:
   ARANGO_ROOT_PASSWORD: IXocx/FJV7jwVQ+DS0RagxeZiUD24Vlrp0LL6UpRfOHx

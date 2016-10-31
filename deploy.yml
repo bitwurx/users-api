@@ -1,0 +1,4 @@
+---
+- hosts: operator
+  roles:
+  - users

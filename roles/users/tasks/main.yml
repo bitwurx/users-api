@@ -1,0 +1,17 @@
+---
+- name: login to gitlab docker registry
+  docker_login:
+    registry: "{{ docker_registry }}"
+    username: "{{ docker_username }}"
+    password: "{{ docker_password }}"
+- name: start users docker container
+  docker_container:
+    env:
+      ARANGO_ROOT_PASSWORD: IXocx/FJV7jwVQ+DS0RagxeZiUD24Vlrp0LL6UpRfOHx
+    image: registry.gitlab.com/project-alicia/users
+    name: users
+    links:
+    - arangodb
+    ports:
+    - 8001:80
+    state: started

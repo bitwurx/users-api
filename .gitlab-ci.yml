@@ -23,6 +23,8 @@ deploy:
   stage: deploy
   script:
   - ansible-playbook deploy.yml
+  only:
+  - master
 
 variables:
   ARANGO_ROOT_PASSWORD: IXocx/FJV7jwVQ+DS0RagxeZiUD24Vlrp0LL6UpRfOHx

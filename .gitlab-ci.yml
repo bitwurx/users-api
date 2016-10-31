@@ -12,7 +12,7 @@ build:
 test:
   stage: test
   script:
-  - docker run -i -e ARANGO_ROOT_PASSWORD=$ARANGO_ROOT_PASSWORD users tox
+  - docker run -i -e ARANGO_ROOT_PASSWORD=$ARANGO_ROOT_PASSWORD registry.gitlab.com/project-alicia/users tox
 
 docker_push:
   stage: docker_push

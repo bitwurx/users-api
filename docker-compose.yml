@@ -1,17 +1,20 @@
 version: '2'
 services:
-  web:
-    build: .
-    env_file: .env
-    image: users
-    links:
-    - arangodb
-    ports:
-    - 8000:80
-    volumes:
-    - ./:/root
   arangodb:
     image: arangodb
     env_file: .env
     volumes:
     - /tmp/arangodb:/var/lib/arangodb3
+  redis:
+    image: redis
+  web:
+    build: .
+    depends_on:
+    - arangodb
+    - redis
+    env_file: .env
+    image: users
+    ports:
+    - 8000:80
+    volumes:
+    - ./:/root

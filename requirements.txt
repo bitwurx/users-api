@@ -3,4 +3,5 @@ cerberus
 python-arango
 tornado
 raven
+redis
 tox

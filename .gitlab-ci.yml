@@ -24,7 +24,7 @@ docker_push:
 deploy:
   stage: deploy
   script:
-  - ansible-playbook deploy.yml
+  - ansible-playbook -i 'alicia.bitwurx.com,' deploy.yml
   only:
   - master
 

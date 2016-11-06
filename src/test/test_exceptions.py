@@ -1,7 +1,8 @@
 from users.exceptions import (
     BaseError,
     BadRequestError,
-    ConflictError
+    ConflictError,
+    NotFoundError
 )
 
 
@@ -48,3 +49,18 @@ def test_ConflictError_error_message_and_data():
 
     assert data == 'ConflictError'
     assert message == 'username field(s) must be unique'
+
+
+def test_NotFoundError_error_code():
+    assert NotFoundError.code == 404
+
+
+def test_NotFoundError_error_message_and_data():
+    try:
+        raise NotFoundError(resource='user')
+    except NotFoundError as e:
+        data = e.data
+        message = e.message
+
+    assert data == 'NotFoundError'
+    assert message == 'user not found'

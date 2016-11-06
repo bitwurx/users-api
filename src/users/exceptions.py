@@ -55,3 +55,20 @@ class ConflictError(BaseError):
 
         self.message = '%s field(s) must be unique' % ', '.join(fields)
         self.data = 'ConflictError'
+
+
+class NotFoundError(BaseError):
+    """Not found exception class
+    """
+
+    code = 404
+
+    def __init__(self, resource):
+        """NotFoundError constructor method
+
+        :param resource: the resource that wasn't found
+        :type resource: str
+        """
+
+        self.message = '%s not found' % resource
+        self.data = 'NotFoundError'

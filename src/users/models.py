@@ -3,14 +3,16 @@
 .. moduleauthor:: Jared Patrick <jared.patrick@gmail.com>
 """
 
+import base64
 import copy
+import json
 import os
 
 import arango
 import arango.exceptions
-
 import bcrypt
 import cerberus
+import redis
 
 from users import exceptions
 
@@ -46,8 +48,59 @@ def connect_arango():
     users.add_hash_index(fields=User.unique, unique=True)
 
 
+class Session(object):
+    """Session model class
+    """
+
+    schema = {'username': {'type': 'string', 'required': True},
+              'password': {'type': 'string', 'required': True}}
+
+    def __init__(self, **kwargs):
+        """Session constructor method
+        """
+
+        self.username = kwargs.get('username')
+        self.password = kwargs.get('password')
+
+    def create(self):
+        """Create a new user session in redis
+        """
+
+        global users
+
+        try:
+            user = users.find({'username': self.username})[0]
+        except IndexError:
+            raise exceptions.NotFoundError('user')
+        else:
+            pwhash = user['password'].encode()
+            if bcrypt.hashpw(self.password.encode(), pwhash) == pwhash:
+                r = redis.Redis()
+                r.setex(base64.b64encode(os.urandom(33)),
+                        json.dumps({'user_id': user['_key']}),
+                        3600)
+            else:
+                raise exceptions.BadRequestError(
+                    'incorrect username or password',
+                    'InvalidCredentialsError'
+                )
+
+    def validate(self):
+        """Validate the model instance data
+
+        :raises: users.exceptions.BadRequestError if validate fails
+        """
+
+        document = {'username': self.username, 'password': self.password}
+        validator = cerberus.Validator()
+
+        if not validator.validate(document, self.schema):
+            raise exceptions.BadRequestError(validator.errors,
+                                             'ValidationError')
+
+
 class User(object):
-    """User database model class
+    """User model class
     """
 
     schema = {'username': {'type': 'string', 'required': True},

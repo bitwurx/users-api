@@ -1,9 +1,4 @@
 ---
-- name: login to gitlab docker registry
-  docker_login:
-    registry: "{{ docker_registry }}"
-    username: "{{ docker_username }}"
-    password: "{{ docker_password }}"
 - name: start users docker container
   docker_container:
     env:

@@ -1,3 +1,5 @@
+import json
+
 from unittest import mock
 
 from arango.exceptions import (
@@ -6,9 +8,8 @@ from arango.exceptions import (
     DocumentInsertError
 )
 
-from users.exceptions import ConflictError
 from users.models import connect_arango
-from users.models import User
+from users.models import Session, User
 
 
 @mock.patch('users.models.arango.ArangoClient')
@@ -42,7 +43,7 @@ def test_connect_arango_handles_existing_database_exception(MockArangoClient):
 
 
 @mock.patch('users.models.arango.ArangoClient')
-def test_connect_arango_creates_collection(MockArangoClient):
+def test_connect_arango_creates_users_collection(MockArangoClient):
     connect_arango()
     db = MockArangoClient().create_database()
     db.create_collection.assert_called_with('users')
@@ -85,6 +86,7 @@ def test_User_passes_validation():
 
 def test_User_validate_raises_exception_if_parameter_is_missing():
     error = None
+
     try:
         User(username='joe', password='password1').validate()
     except Exception as e:
@@ -112,17 +114,129 @@ def test_User_create_adds_user_to_database(mock_gensalt, mock_users):
 
 @mock.patch('users.models.users')
 @mock.patch('users.models.bcrypt')
-def test_User_create_raises_ConflictError(mock_bcrypt, mock_users):
+def test_User_create_raises_excpetion_if_user_exists(mock_bcrypt, mock_users):
     def mock_insert(*args, **kwargs):
         raise DocumentInsertError(None)
 
     mock_users.insert.side_effect = mock_insert
     user = User(username='joe', password='test', email='joe@schmoe.com')
-    message = None
+    error = None
 
     try:
         user.create()
-    except ConflictError as e:
-        message = e.message
+    except Exception as e:
+        error = e
 
-    assert message == 'username field(s) must be unique'
+    assert error.message == 'username field(s) must be unique'
+
+
+def test_Session_schema():
+    assert Session.schema == {'username': {'type': 'string', 'required': True},
+                              'password': {'type': 'string', 'required': True}}
+
+
+@mock.patch('users.models.redis')
+@mock.patch('users.models.users')
+@mock.patch('users.models.bcrypt')
+def test_Session_create_gets_user_from_database(
+        mock_bcrypt,
+        mock_users,
+        mock_redis):
+    mock_users.find.return_value = [{'username': 'joe',
+                                     'password': 'test',
+                                     '_key': 12345}]
+    mock_bcrypt.hashpw.return_value = b'test'
+    session = Session(username='joe', password='test')
+    session.create()
+    mock_users.find.assert_called_with({'username': 'joe'})
+
+
+@mock.patch('users.models.users')
+@mock.patch('users.models.bcrypt')
+def test_Session_create_raises_exception_if_username_not_exists(
+        mock_bcrypt,
+        mock_users):
+    mock_users.find.return_value = []
+    session = Session(username='joe', password='test')
+    error = None
+
+    try:
+        session.create()
+    except Exception as e:
+        error = e
+
+    assert error.data == 'NotFoundError'
+    assert error.message == 'user not found'
+
+
+@mock.patch('users.models.redis')
+@mock.patch('users.models.users')
+@mock.patch('users.models.bcrypt')
+def test_Session_create_checks_password(mock_bcrypt, mock_users, mock_redis):
+    mock_users.find.return_value = [{'password': 'abc123',
+                                     'username': 'joe',
+                                     '_key': 12345}]
+    mock_bcrypt.hashpw.return_value = b'abc123'
+    session = Session(username='jane', password='abc123')
+    session.create()
+    mock_bcrypt.hashpw.assert_called_with(b'abc123', b'abc123')
+
+
+@mock.patch('users.models.os')
+@mock.patch('users.models.base64')
+@mock.patch('users.models.redis.Redis')
+@mock.patch('users.models.users')
+@mock.patch('users.models.bcrypt')
+def test_Session_create_session_token(
+        mock_bcrypt,
+        mock_users,
+        MockRedis,
+        mock_base64,
+        mock_os):
+    mock_users.find.return_value = [{'password': 'password!',
+                                     '_key': 12345}]
+    mock_bcrypt.hashpw.return_value = b'password!'
+    mock_base64.b64encode.return_value = \
+        b'YXC+oPIbOKNH6jGu6BFDXyPEReDbC6Pc0hsJ6lRF6E50'
+    mock_os.urandom.return_value = 'abc123'
+    session = Session(username='joe', password='password!')
+    session.create()
+    mock_os.urandom.assert_called_with(33)
+    mock_base64.b64encode.assert_called_with('abc123')
+    MockRedis().setex.assert_called_with(
+        b'YXC+oPIbOKNH6jGu6BFDXyPEReDbC6Pc0hsJ6lRF6E50',
+        json.dumps({'user_id': 12345}),
+        3600
+    )
+
+
+@mock.patch('users.models.users')
+@mock.patch('users.models.bcrypt')
+def test_Session_create_raises_exception_if_password_is_invalid(
+        mock_bcrypt,
+        mock_users):
+    mock_bcrypt.hashpw.return_value = b'abc123'
+    mock_users.find.return_value = [{'username': 'joe', 'password': 'xyz123'}]
+    session = Session(username='joe', password='xyz123')
+    error = None
+
+    try:
+        session.create()
+    except Exception as e:
+        error = e
+
+    assert error.data == 'InvalidCredentialsError'
+    assert error.message == 'incorrect username or password'
+
+
+@mock.patch('users.models.users')
+def test_Session_validate_raises_exception_if_parameter_is_missing(mock_users):
+    session = Session(username='jane')
+    error = None
+
+    try:
+        session.validate()
+    except Exception as e:
+        error = e
+
+    assert error.message == {'password': ['null value not allowed']}

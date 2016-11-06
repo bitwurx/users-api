@@ -193,8 +193,7 @@ def test_Session_create_session_token(
         MockRedis,
         mock_base64,
         mock_os):
-    mock_users.find.return_value = [{'username': 'jane',
-                                     'password': 'password!',
+    mock_users.find.return_value = [{'password': 'password!',
                                      '_key': 12345}]
     mock_bcrypt.hashpw.return_value = b'password!'
     mock_base64.b64encode.return_value = \
@@ -206,7 +205,7 @@ def test_Session_create_session_token(
     mock_base64.b64encode.assert_called_with('abc123')
     MockRedis().setex.assert_called_with(
         b'YXC+oPIbOKNH6jGu6BFDXyPEReDbC6Pc0hsJ6lRF6E50',
-        json.dumps({'user_id': 12345, 'username': 'jane'}),
+        json.dumps({'user_id': 12345}),
         3600
     )
 

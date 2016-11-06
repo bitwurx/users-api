@@ -77,8 +77,7 @@ class Session(object):
             if bcrypt.hashpw(self.password.encode(), pwhash) == pwhash:
                 r = redis.Redis()
                 r.setex(base64.b64encode(os.urandom(33)),
-                        json.dumps({'user_id': user['_key'],
-                                    'username': user['username']}),
+                        json.dumps({'user_id': user['_key']}),
                         3600)
             else:
                 raise exceptions.BadRequestError(

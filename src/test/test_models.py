@@ -1,3 +1,5 @@
+import json
+
 from unittest import mock
 
 from arango.exceptions import (
@@ -140,7 +142,9 @@ def test_Session_create_gets_user_from_database(
         mock_bcrypt,
         mock_users,
         mock_redis):
-    mock_users.find.return_value = [{'username': 'joe', 'password': 'test'}]
+    mock_users.find.return_value = [{'username': 'joe',
+                                     'password': 'test',
+                                     '_key': 12345}]
     mock_bcrypt.hashpw.return_value = b'test'
     session = Session(username='joe', password='test')
     session.create()
@@ -169,7 +173,9 @@ def test_Session_create_raises_exception_if_username_not_exists(
 @mock.patch('users.models.users')
 @mock.patch('users.models.bcrypt')
 def test_Session_create_checks_password(mock_bcrypt, mock_users, mock_redis):
-    mock_users.find.return_value = [{'password': 'abc123'}]
+    mock_users.find.return_value = [{'password': 'abc123',
+                                     'username': 'joe',
+                                     '_key': 12345}]
     mock_bcrypt.hashpw.return_value = b'abc123'
     session = Session(username='jane', password='abc123')
     session.create()
@@ -187,7 +193,9 @@ def test_Session_create_session_token(
         MockRedis,
         mock_base64,
         mock_os):
-    mock_users.find.return_value = [{'password': 'password!'}]
+    mock_users.find.return_value = [{'username': 'jane',
+                                     'password': 'password!',
+                                     '_key': 12345}]
     mock_bcrypt.hashpw.return_value = b'password!'
     mock_base64.b64encode.return_value = \
         b'YXC+oPIbOKNH6jGu6BFDXyPEReDbC6Pc0hsJ6lRF6E50'
@@ -197,8 +205,8 @@ def test_Session_create_session_token(
     mock_os.urandom.assert_called_with(33)
     mock_base64.b64encode.assert_called_with('abc123')
     MockRedis().setex.assert_called_with(
-        'sessions',
         b'YXC+oPIbOKNH6jGu6BFDXyPEReDbC6Pc0hsJ6lRF6E50',
+        json.dumps({'user_id': 12345, 'username': 'jane'}),
         3600
     )
 

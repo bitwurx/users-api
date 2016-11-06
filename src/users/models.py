@@ -5,6 +5,7 @@
 
 import base64
 import copy
+import json
 import os
 
 import arango
@@ -75,8 +76,9 @@ class Session(object):
             pwhash = user['password'].encode()
             if bcrypt.hashpw(self.password.encode(), pwhash) == pwhash:
                 r = redis.Redis()
-                r.setex('sessions',
-                        base64.b64encode(os.urandom(33)),
+                r.setex(base64.b64encode(os.urandom(33)),
+                        json.dumps({'user_id': user['_key'],
+                                    'username': user['username']}),
                         3600)
             else:
                 raise exceptions.BadRequestError(

@@ -64,4 +64,4 @@ class UsersResourceV1(tornado.web.RequestHandler):
         except Exception as e:
             response = e.response()
 
-        self.write(json.dumps(response, indent=4))
+        self.write(response)

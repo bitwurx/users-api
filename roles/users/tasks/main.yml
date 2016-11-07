@@ -1,6 +1,6 @@
 ---
 - name: create nginx location directory
-  file: path=/etc/nginx/location/users.conf state=directory
+  file: path=/etc/nginx/locations/users.conf state=directory
 - name: add nginx location config
   copy: src=nginx.conf dest=/etc/nginx/locations/users.conf
 - name: start users docker container

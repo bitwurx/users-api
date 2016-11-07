@@ -139,6 +139,7 @@ class User(object):
         else:
             user = copy.copy(data)
             user['id'] = meta['_key']
+            del user['password']
 
             return user
 

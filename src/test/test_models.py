@@ -104,7 +104,6 @@ def test_User_create_adds_user_to_database(mock_gensalt, mock_users):
     pwhash = '$2b$12$buE1MyflUVhDp92MkjQV3OqXCVBhtMZk1bUywn6dTTBmTgy4WbEpe'
     user = User(username='joe', password='test', email='joe@schmoe.com')
     assert user.create() == {'username': 'joe',
-                             'password': pwhash,
                              'email': 'joe@schmoe.com',
                              'id': 27643}
     mock_users.insert.assert_called_with({'username': 'joe',

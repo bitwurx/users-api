@@ -39,6 +39,7 @@ def test_UsersResource_post_creates_user_document(MockUser):
     data = {'username': 'joe', 'password': 'test', 'email': 'joe@schmoe.com'}
     user = copy.deepcopy(data)
     user['id'] = 28918
+    del user['password']
     MockUser().create.return_value = user
     request = mock.Mock()
     request.body = json.dumps(data).encode()
@@ -50,13 +51,12 @@ def test_UsersResource_post_creates_user_document(MockUser):
                                    'password': 'test',
                                    'email': 'joe@schmoe.com'})
 
-    response = json.loads(resource.write.mock_calls[0][1][0])
+    response = resource.write.mock_calls[0][1][0]
     assert response['code'] == 200
     assert response['status'] == 'success'
     assert response['data'] == {
         'id': 28918,
         'username': 'joe',
-        'password': 'test',
         'email': 'joe@schmoe.com'
     }
 
@@ -67,7 +67,7 @@ def test_UsersResource_post_sends_decode_error_on_exception():
     resource = UsersResourceV1(mock.MagicMock(), request)
     resource.write = mock.Mock()
     resource.post()
-    response = json.loads(resource.write.mock_calls[0][1][0])
+    response = resource.write.mock_calls[0][1][0]
     assert response['code'] == 400
     assert response['status'] == 'error'
     assert response['message'] == 'Expecting value: line 1 column 2 (char 1)'
@@ -84,7 +84,7 @@ def test_UsersResource_post_sends_conflict_error_on_exception(MockUser):
     resource = UsersResourceV1(mock.MagicMock(), request)
     resource.write = mock.Mock()
     resource.post()
-    response = json.loads(resource.write.mock_calls[0][1][0])
+    response = resource.write.mock_calls[0][1][0]
     assert response['code'] == 409
     assert response['status'] == 'error'
     assert response['message'] == 'username field(s) must be unique'
@@ -103,7 +103,7 @@ def test_UsersResource_post_sends_valiation_error_on_exception(MockUser):
     resource = UsersResourceV1(mock.MagicMock(), request)
     resource.write = mock.Mock()
     resource.post()
-    response = json.loads(resource.write.mock_calls[0][1][0])
+    response = resource.write.mock_calls[0][1][0]
     assert response['code'] == 400
     assert response['status'] == 'error'
     assert response['message'] == json.dumps(errors)

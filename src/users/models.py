@@ -75,7 +75,7 @@ class Session(object):
         else:
             pwhash = user['password'].encode()
             if bcrypt.hashpw(self.password.encode(), pwhash) == pwhash:
-                r = redis.Redis()
+                r = redis.Redis('redis', 6379)
                 r.setex(base64.b64encode(os.urandom(33)),
                         json.dumps({'user_id': user['_key']}),
                         3600)
@@ -84,6 +84,24 @@ class Session(object):
                     'incorrect username or password',
                     'InvalidCredentialsError'
                 )
+
+    def read(self, token):
+        """Read the user details of a valid user session
+
+        :param token: the user session token
+        :type token: str
+        :return: the fetched user data
+        :rtype: dict
+        """
+
+        global users
+
+        r = redis.Redis('redis', 6379)
+        user_id = json.loads(r.get(token).decode()).get('user_id')
+        user = users.get(user_id)
+        del user['password']
+
+        return user
 
     def validate(self):
         """Validate the model instance data

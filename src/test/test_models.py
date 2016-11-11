@@ -239,3 +239,17 @@ def test_Session_validate_raises_exception_if_parameter_is_missing(mock_users):
         error = e
 
     assert error.message == {'password': ['null value not allowed']}
+
+
+@mock.patch('users.models.users')
+@mock.patch('users.models.redis.Redis')
+def test_Session_read_gets_user_session_details(MockRedis, mock_users):
+    MockRedis().get.return_value = b'{"user_id": 12345}'
+    mock_users.get.return_value = {'username': 'joe',
+                                   'password': 'password1!',
+                                   'email': 'jared.patrick@gmail.com'}
+    session = Session()
+    user = session.read('1a2b3c')
+    assert user['username'] == 'joe'
+    assert user['email'] == 'jared.patrick@gmail.com'
+    assert user.get('password', None) is None

@@ -108,3 +108,8 @@ def test_UsersResource_post_sends_valiation_error_on_exception(MockUser):
     assert response['status'] == 'error'
     assert response['message'] == json.dumps(errors)
     assert response['data'] == 'ValidationError'
+
+
+# @mock.patch('users.api.Session')
+# def test_SessionsResource_get_gets_user_session_details(MockSession):
+#     def

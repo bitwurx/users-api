@@ -1,6 +1,6 @@
 ---
 - name: create nginx location directory
-  file: path=/etc/nginx/locations/users.conf state=directory
+  file: path=/etc/nginx/locations state=directory
 - name: add nginx location config
   copy: src=nginx.conf dest=/etc/nginx/locations/users.conf
 - name: start users docker container
@@ -16,3 +16,9 @@
     - 8001:80
     pull: true
     state: started
+- name: test nginx config
+  command: nginx -t
+  register: nginx_test
+- name: reload nginx
+  command: nginx -s reload
+  when: nginx_test|success

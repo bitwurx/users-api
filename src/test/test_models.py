@@ -276,17 +276,17 @@ def test_Session_read_raises_exception_if_token_not_found(
 
 @mock.patch('users.models.users')
 @mock.patch('users.models.redis.Redis')
-def test_Session_update_reset_existing_key(MockRedis, mock_users):
+def test_Session_update_resets_existing_session(MockRedis, mock_users):
     MockRedis().get.return_value = '{"user_id": 12345}'
     session = Session(token='abc123')
-    session.update()
+    assert session.update() == {'token': 'abc123'}
     MockRedis().get.assert_called_with('abc123')
     MockRedis().setex.assert_called_with('abc123', '{"user_id": 12345}')
 
 
 @mock.patch('users.models.users')
 @mock.patch('users.models.redis.Redis')
-def test_Sessions_update_raises_exceptions_if_token_not_found(
+def test_Session_update_raises_exceptions_if_token_not_found(
         MockRedis,
         mock_users):
     MockRedis().get.return_value = None
@@ -295,6 +295,32 @@ def test_Sessions_update_raises_exceptions_if_token_not_found(
 
     try:
         session.update()
+    except Exception as e:
+        error = e
+
+    assert error.data == 'NotFoundError'
+    assert error.message == 'session token not found'
+
+
+@mock.patch('users.models.users')
+@mock.patch('users.models.redis.Redis')
+def test_Session_delete_session_token(MockRedis, mock_users):
+    session = Session(token='abc123')
+    assert session.delete() == {}
+    MockRedis().delete.assert_called_with('abc123')
+
+
+@mock.patch('users.models.users')
+@mock.patch('users.models.redis.Redis')
+def test_Session_delete_raises_exception_if_token_not_found(
+        MockRedis,
+        mock_users):
+    MockRedis().get.return_value = None
+    session = Session(token='1a2b3c')
+    error = None
+
+    try:
+        session.delete()
     except Exception as e:
         error = e
 

@@ -8,7 +8,7 @@ import json
 import tornado.gen
 import tornado.web
 
-from users.exceptions import BadRequestError
+from users.exceptions import BadRequestError, NotFoundError
 from users.models import Session, User
 
 
@@ -49,12 +49,15 @@ class SessionsResourceV1(tornado.web.RequestHandler):
     @tornado.gen.coroutine
     def get(self, token):
         """Get a user's session details
+
+        :param token: the session token
+        :type token: str
         """
 
         response = {}
 
         try:
-            user = Session().read(token)
+            user = Session(token=token).read()
         except Exception as e:
             response = e.response()
         else:
@@ -66,14 +69,58 @@ class SessionsResourceV1(tornado.web.RequestHandler):
     @tornado.gen.coroutine
     def post(self, token):
         """Create a user session token
+
+        :param token: the session token
+        :type token: str
         """
 
         response = {}
 
         try:
+            if token != '':
+                raise NotFoundError('resource')
+
             body = parse_json_body(self.request.body.decode())
             session = Session(**body).create()
             response = make_response(data=session)
+        except Exception as e:
+            response = e.response()
+
+        self.set_status(response['code'])
+        self.write(response)
+
+    @tornado.gen.coroutine
+    def put(self, token):
+        """Refresh the user session token
+
+        :param token: the session token
+        :type token: str
+        """
+
+        response = {}
+
+        try:
+            token = Session(token=token).update()
+            response = make_response(data=token)
+        except Exception as e:
+            response = e.response()
+
+        self.set_status(response['code'])
+        self.write(response)
+
+    @tornado.gen.coroutine
+    def delete(self, token):
+        """Delete the user session token
+
+        :param token: the session token
+        :type token: str
+        """
+
+        response = {}
+
+        try:
+            token = Session(token=token).delete()
+            response = make_response(data=token)
         except Exception as e:
             response = e.response()
 

@@ -72,6 +72,8 @@ class Session(object):
 
         global users
 
+        self.validate()
+
         try:
             user = list(users.find({'username': self.username}))[0]
         except IndexError:
@@ -91,6 +93,21 @@ class Session(object):
                         3600)
                 return {'token': token.decode()}
 
+    def delete(self):
+        """Delete the user session token
+        """
+
+        r = redis.Redis('redis', 6379)
+
+        try:
+            r.get(self.token).decode()
+        except AttributeError:
+            raise exceptions.NotFoundError('session token')
+        else:
+            r.delete(self.token)
+
+        return {}
+
     def read(self):
         """Read the user details of a valid user session
 
@@ -108,13 +125,18 @@ class Session(object):
             raise exceptions.NotFoundError('session token')
         else:
             user_id = json.loads(token).get('user_id')
-            user = users.get(user_id)
-            del user['password']
+            data = users.get(user_id)
+            user = {'username': data['username'], 'email': data['email']}
 
         return user
 
     def update(self):
         """Update the user session extending the expiry
+
+        :raises: users.exceptions.NotFoundError if session token
+            is not found in redis
+        :return: the updated session token value
+        :rtype: str
         """
 
         r = redis.Redis('redis', 6379)
@@ -122,8 +144,10 @@ class Session(object):
         session = r.get(self.token)
         if session is None:
             raise exceptions.NotFoundError('session token')
+        else:
+            r.setex(self.token, session)
 
-        r.setex(self.token, session)
+        return {'token': self.token}
 
     def validate(self):
         """Validate the model instance data

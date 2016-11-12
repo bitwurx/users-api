@@ -9,7 +9,7 @@ import tornado.gen
 import tornado.web
 
 from users.exceptions import BadRequestError
-from users.models import User
+from users.models import Session, User
 
 
 def make_response(code=200, data=None):
@@ -42,6 +42,28 @@ def parse_json_body(data):
         raise BadRequestError(message=e.args[0], data='JSONDecodeError')
 
 
+class SessionsResourceV1(tornado.web.RequestHandler):
+    """Sessions REST API resource handler class
+    """
+
+    @tornado.gen.coroutine
+    def get(self, token):
+        """Get a user's session details
+        """
+
+        response = {}
+
+        try:
+            user = Session().read(token)
+        except Exception as e:
+            response = e.response()
+        else:
+            response = make_response(data=user)
+
+        self.set_status(response['code'])
+        self.write(response)
+
+
 class UsersResourceV1(tornado.web.RequestHandler):
     """Users REST API resource handler class
     """
@@ -64,4 +86,5 @@ class UsersResourceV1(tornado.web.RequestHandler):
         except Exception as e:
             response = e.response()
 
+        self.set_status(response['code'])
         self.write(response)

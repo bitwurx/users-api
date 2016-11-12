@@ -253,3 +253,20 @@ def test_Session_read_gets_user_session_details(MockRedis, mock_users):
     assert user['username'] == 'joe'
     assert user['email'] == 'jared.patrick@gmail.com'
     assert user.get('password', None) is None
+
+
+@mock.patch('users.models.users')
+@mock.patch('users.models.redis.Redis')
+def test_Session_read_raises_exception_if_token_not_found(
+        MockRedis,
+        mock_users):
+    MockRedis().get.return_value = None
+    error = None
+
+    try:
+        Session().read('xyz')
+    except Exception as e:
+        error = e
+
+    assert error.data == 'NotFoundError'
+    assert error.message == 'session token not found'

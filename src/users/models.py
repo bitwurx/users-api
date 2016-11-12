@@ -97,9 +97,15 @@ class Session(object):
         global users
 
         r = redis.Redis('redis', 6379)
-        user_id = json.loads(r.get(token).decode()).get('user_id')
-        user = users.get(user_id)
-        del user['password']
+
+        try:
+            token = r.get(token).decode()
+        except AttributeError:
+            raise exceptions.NotFoundError('session token')
+        else:
+            user_id = json.loads(token).get('user_id')
+            user = users.get(user_id)
+            del user['password']
 
         return user
 

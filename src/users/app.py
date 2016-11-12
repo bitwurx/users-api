@@ -5,11 +5,15 @@
 
 import tornado.web
 
-from users.api import UsersResourceV1
+from users.api import (
+    SessionsResourceV1,
+    UsersResourceV1
+)
 
 
 class Application(tornado.web.Application):
     handlers = [
+        (r'^/sessions/(?P<token>.*)/?', SessionsResourceV1,),
         (r'^/users/?', UsersResourceV1,)
     ]
 

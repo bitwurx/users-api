@@ -199,7 +199,9 @@ def test_Session_create_session_token(
         b'YXC+oPIbOKNH6jGu6BFDXyPEReDbC6Pc0hsJ6lRF6E50'
     mock_os.urandom.return_value = 'abc123'
     session = Session(username='joe', password='password!')
-    session.create()
+    assert session.create() == {
+        'token': 'YXC+oPIbOKNH6jGu6BFDXyPEReDbC6Pc0hsJ6lRF6E50'
+    }
     mock_os.urandom.assert_called_with(33)
     mock_base64.b64encode.assert_called_with('abc123')
     MockRedis().setex.assert_called_with(

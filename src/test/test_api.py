@@ -150,10 +150,26 @@ def test_SessionResource_get_returns_404_if_session_not_exists(MockSession):
     resource = SessionsResourceV1(mock.MagicMock(), mock.Mock())
     resource.write = mock.Mock()
     resource.set_status = mock.Mock()
-    resource.get('testing')
+    resource.get('xyz890')
     response = resource.write.mock_calls[0][1][0]
     resource.set_status.assert_called_with(404)
     assert response['code'] == 404
     assert response['status'] == 'error'
     assert response['data'] == 'NotFoundError'
     assert response['message'] == 'session token not found'
+
+
+@mock.patch('users.api.Session')
+def test_SessionResource_post_creates_user_session(MockSession):
+    MockSession().create.return_value = {'token': '1a2b3c'}
+    request = mock.Mock()
+    request.body = b'{"username": "test", "password": "password1"}'
+    resource = SessionsResourceV1(mock.MagicMock(), request)
+    resource.write = mock.Mock()
+    resource.set_status = mock.Mock()
+    resource.post()
+    response = resource.write.mock_calls[0][1][0]
+    resource.set_status.assert_called_with(200)
+    assert response['code'] == 200
+    assert response['status'] == 'success'
+    assert response['data'] == {'token': '1a2b3c'}

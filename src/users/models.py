@@ -64,6 +64,9 @@ class Session(object):
 
     def create(self):
         """Create a new user session in redis
+
+        :return: the created sessio ndetails
+        :rtype: dict
         """
 
         global users
@@ -74,16 +77,18 @@ class Session(object):
             raise exceptions.NotFoundError('user')
         else:
             pwhash = user['password'].encode()
-            if bcrypt.hashpw(self.password.encode(), pwhash) == pwhash:
-                r = redis.Redis('redis', 6379)
-                r.setex(base64.b64encode(os.urandom(33)),
-                        json.dumps({'user_id': user['_key']}),
-                        3600)
-            else:
+            if bcrypt.hashpw(self.password.encode(), pwhash) != pwhash:
                 raise exceptions.BadRequestError(
                     'incorrect username or password',
                     'InvalidCredentialsError'
                 )
+            else:
+                token = base64.b64encode(os.urandom(33))
+                r = redis.Redis('redis', 6379)
+                r.setex(token,
+                        json.dumps({'user_id': user['_key']}),
+                        3600)
+                return {'token': token.decode()}
 
     def read(self, token):
         """Read the user details of a valid user session

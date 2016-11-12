@@ -63,6 +63,20 @@ class SessionsResourceV1(tornado.web.RequestHandler):
         self.set_status(response['code'])
         self.write(response)
 
+    @tornado.gen.coroutine
+    def post(self):
+        """Create a user session token
+        """
+
+        response = {}
+
+        body = parse_json_body(self.request.body.decode())
+        session = Session(**body).create()
+        response = make_response(data=session)
+
+        self.set_status(response['code'])
+        self.write(response)
+
 
 class UsersResourceV1(tornado.web.RequestHandler):
     """Users REST API resource handler class

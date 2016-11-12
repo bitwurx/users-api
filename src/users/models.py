@@ -72,7 +72,7 @@ class Session(object):
         global users
 
         try:
-            user = users.find({'username': self.username})[0]
+            user = list(users.find({'username': self.username}))[0]
         except IndexError:
             raise exceptions.NotFoundError('user')
         else:

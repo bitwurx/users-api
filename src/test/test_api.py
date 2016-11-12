@@ -103,7 +103,7 @@ def test_UsersResource_post_sends_conflict_error_on_exception(MockUser):
 
 
 @mock.patch('users.api.User')
-def test_UsersResource_post_sends_valiation_error_on_exception(MockUser):
+def test_UsersResource_post_sends_validation_error_on_exception(MockUser):
     def mock_create(*args, **kwargs):
         raise BadRequestError(json.dumps(errors), 'ValidationError')
 
@@ -142,7 +142,7 @@ def test_SessionsResource_get_gets_user_session_details(MockSession):
 
 
 @mock.patch('users.api.Session')
-def test_SessionResource_get_returns_404_if_session_not_exists(MockSession):
+def test_SessionsResource_get_returns_404_if_session_not_exists(MockSession):
     def mock_read(*args, **kwargs):
         raise NotFoundError('session token')
 
@@ -160,16 +160,56 @@ def test_SessionResource_get_returns_404_if_session_not_exists(MockSession):
 
 
 @mock.patch('users.api.Session')
-def test_SessionResource_post_creates_user_session(MockSession):
+def test_SessionsResource_post_creates_user_session(MockSession):
     MockSession().create.return_value = {'token': '1a2b3c'}
     request = mock.Mock()
     request.body = b'{"username": "test", "password": "password1"}'
     resource = SessionsResourceV1(mock.MagicMock(), request)
     resource.write = mock.Mock()
     resource.set_status = mock.Mock()
-    resource.post()
+    resource.post('xyz')
     response = resource.write.mock_calls[0][1][0]
     resource.set_status.assert_called_with(200)
     assert response['code'] == 200
     assert response['status'] == 'success'
     assert response['data'] == {'token': '1a2b3c'}
+
+
+@mock.patch('users.api.Session')
+def test_SessionsResource_post_sends_decode_error_on_exception(MockSession):
+    request = mock.Mock()
+    request.body = b'[{'
+    resource = SessionsResourceV1(mock.MagicMock(), request)
+    resource.write = mock.Mock()
+    resource.set_status = mock.Mock()
+    resource.post('xyz')
+    response = resource.write.mock_calls[0][1][0]
+    resource.set_status.assert_called_with(400)
+    assert response['code'] == 400
+    assert response['status'] == 'error'
+    assert response['data'] == 'JSONDecodeError'
+    assert response['message'] == \
+        'Expecting property name enclosed in double quotes: line 1 column 3' \
+        ' (char 2)'
+
+
+@mock.patch('users.api.Session')
+def test_SessionsResource_post_sends_validation_error_on_exception(
+        MockSession):
+    def mock_create(*args, **kwargs):
+        raise BadRequestError(json.dumps(errors), 'ValidationError')
+
+    MockSession().create.side_effect = mock_create
+    errors = {'password': ['null value not allowed']}
+    request = mock.Mock()
+    request.body = b'{}'
+    resource = SessionsResourceV1(mock.MagicMock(), request)
+    resource.write = mock.Mock()
+    resource.set_status = mock.Mock()
+    resource.post('test')
+    response = resource.write.mock_calls[0][1][0]
+    resource.set_status.assert_called_with(400)
+    assert response['code'] == 400
+    assert response['status'] == 'error'
+    assert response['data'] == 'ValidationError'
+    assert response['message'] == json.dumps(errors)

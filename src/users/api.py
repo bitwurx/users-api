@@ -64,15 +64,18 @@ class SessionsResourceV1(tornado.web.RequestHandler):
         self.write(response)
 
     @tornado.gen.coroutine
-    def post(self):
+    def post(self, token):
         """Create a user session token
         """
 
         response = {}
 
-        body = parse_json_body(self.request.body.decode())
-        session = Session(**body).create()
-        response = make_response(data=session)
+        try:
+            body = parse_json_body(self.request.body.decode())
+            session = Session(**body).create()
+            response = make_response(data=session)
+        except Exception as e:
+            response = e.response()
 
         self.set_status(response['code'])
         self.write(response)

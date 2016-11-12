@@ -13,7 +13,7 @@ from users.api import (
 
 class Application(tornado.web.Application):
     handlers = [
-        (r'^/sessions/(?P<token>.*)/?', SessionsResourceV1,),
+        (r'^/sessions/?(?P<token>.*)/?', SessionsResourceV1,),
         (r'^/users/?', UsersResourceV1,)
     ]
 

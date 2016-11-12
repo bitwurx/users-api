@@ -250,8 +250,8 @@ def test_Session_read_gets_user_session_details(MockRedis, mock_users):
     mock_users.get.return_value = {'username': 'joe',
                                    'password': 'password1!',
                                    'email': 'jared.patrick@gmail.com'}
-    session = Session()
-    user = session.read('1a2b3c')
+    session = Session(token='1a2b3c')
+    user = session.read()
     assert user['username'] == 'joe'
     assert user['email'] == 'jared.patrick@gmail.com'
     assert user.get('password', None) is None
@@ -266,7 +266,35 @@ def test_Session_read_raises_exception_if_token_not_found(
     error = None
 
     try:
-        Session().read('xyz')
+        Session(token='xyz').read()
+    except Exception as e:
+        error = e
+
+    assert error.data == 'NotFoundError'
+    assert error.message == 'session token not found'
+
+
+@mock.patch('users.models.users')
+@mock.patch('users.models.redis.Redis')
+def test_Session_update_reset_existing_key(MockRedis, mock_users):
+    MockRedis().get.return_value = '{"user_id": 12345}'
+    session = Session(token='abc123')
+    session.update()
+    MockRedis().get.assert_called_with('abc123')
+    MockRedis().setex.assert_called_with('abc123', '{"user_id": 12345}')
+
+
+@mock.patch('users.models.users')
+@mock.patch('users.models.redis.Redis')
+def test_Sessions_update_raises_exceptions_if_token_not_found(
+        MockRedis,
+        mock_users):
+    MockRedis().get.return_value = None
+    session = Session(token='xyz321')
+    error = None
+
+    try:
+        session.update()
     except Exception as e:
         error = e
 

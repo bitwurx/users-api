@@ -61,6 +61,7 @@ class Session(object):
 
         self.username = kwargs.get('username')
         self.password = kwargs.get('password')
+        self.token = kwargs.get('token')
 
     def create(self):
         """Create a new user session in redis
@@ -90,11 +91,9 @@ class Session(object):
                         3600)
                 return {'token': token.decode()}
 
-    def read(self, token):
+    def read(self):
         """Read the user details of a valid user session
 
-        :param token: the user session token
-        :type token: str
         :return: the fetched user data
         :rtype: dict
         """
@@ -104,7 +103,7 @@ class Session(object):
         r = redis.Redis('redis', 6379)
 
         try:
-            token = r.get(token).decode()
+            token = r.get(self.token).decode()
         except AttributeError:
             raise exceptions.NotFoundError('session token')
         else:
@@ -113,6 +112,18 @@ class Session(object):
             del user['password']
 
         return user
+
+    def update(self):
+        """Update the user session extending the expiry
+        """
+
+        r = redis.Redis('redis', 6379)
+
+        session = r.get(self.token)
+        if session is None:
+            raise exceptions.NotFoundError('session token')
+
+        r.setex(self.token, session)
 
     def validate(self):
         """Validate the model instance data

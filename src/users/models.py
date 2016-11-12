@@ -61,29 +61,93 @@ class Session(object):
 
         self.username = kwargs.get('username')
         self.password = kwargs.get('password')
+        self.token = kwargs.get('token')
 
     def create(self):
         """Create a new user session in redis
+
+        :return: the created sessio ndetails
+        :rtype: dict
         """
 
         global users
 
+        self.validate()
+
         try:
-            user = users.find({'username': self.username})[0]
+            user = list(users.find({'username': self.username}))[0]
         except IndexError:
             raise exceptions.NotFoundError('user')
         else:
             pwhash = user['password'].encode()
-            if bcrypt.hashpw(self.password.encode(), pwhash) == pwhash:
-                r = redis.Redis()
-                r.setex(base64.b64encode(os.urandom(33)),
-                        json.dumps({'user_id': user['_key']}),
-                        3600)
-            else:
+            if bcrypt.hashpw(self.password.encode(), pwhash) != pwhash:
                 raise exceptions.BadRequestError(
                     'incorrect username or password',
                     'InvalidCredentialsError'
                 )
+            else:
+                token = base64.b64encode(os.urandom(33))
+                r = redis.Redis('redis', 6379)
+                r.setex(token,
+                        json.dumps({'user_id': user['_key']}),
+                        3600)
+                return {'token': token.decode()}
+
+    def delete(self):
+        """Delete the user session token
+        """
+
+        r = redis.Redis('redis', 6379)
+
+        try:
+            r.get(self.token).decode()
+        except AttributeError:
+            raise exceptions.NotFoundError('session token')
+        else:
+            r.delete(self.token)
+
+        return {}
+
+    def read(self):
+        """Read the user details of a valid user session
+
+        :return: the fetched user data
+        :rtype: dict
+        """
+
+        global users
+
+        r = redis.Redis('redis', 6379)
+
+        try:
+            token = r.get(self.token).decode()
+        except AttributeError:
+            raise exceptions.NotFoundError('session token')
+        else:
+            user_id = json.loads(token).get('user_id')
+            data = users.get(user_id)
+            user = {'username': data['username'], 'email': data['email']}
+
+        return user
+
+    def update(self):
+        """Update the user session extending the expiry
+
+        :raises: users.exceptions.NotFoundError if session token
+            is not found in redis
+        :return: the updated session token value
+        :rtype: str
+        """
+
+        r = redis.Redis('redis', 6379)
+
+        session = r.get(self.token)
+        if session is None:
+            raise exceptions.NotFoundError('session token')
+        else:
+            r.setex(self.token, session, 3600)
+
+        return {'token': self.token}
 
     def validate(self):
         """Validate the model instance data

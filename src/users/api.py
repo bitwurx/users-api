@@ -8,8 +8,8 @@ import json
 import tornado.gen
 import tornado.web
 
-from users.exceptions import BadRequestError
-from users.models import User
+from users.exceptions import BadRequestError, NotFoundError
+from users.models import Session, User
 
 
 def make_response(code=200, data=None):
@@ -42,6 +42,92 @@ def parse_json_body(data):
         raise BadRequestError(message=e.args[0], data='JSONDecodeError')
 
 
+class SessionsResourceV1(tornado.web.RequestHandler):
+    """Sessions REST API resource handler class
+    """
+
+    @tornado.gen.coroutine
+    def get(self, token):
+        """Get a user's session details
+
+        :param token: the session token
+        :type token: str
+        """
+
+        response = {}
+
+        try:
+            user = Session(token=token).read()
+        except Exception as e:
+            response = e.response()
+        else:
+            response = make_response(data=user)
+
+        self.set_status(response['code'])
+        self.write(response)
+
+    @tornado.gen.coroutine
+    def post(self, token):
+        """Create a user session token
+
+        :param token: the session token
+        :type token: str
+        """
+
+        response = {}
+
+        try:
+            if token != '':
+                raise NotFoundError('resource')
+
+            body = parse_json_body(self.request.body.decode())
+            session = Session(**body).create()
+            response = make_response(data=session)
+        except Exception as e:
+            response = e.response()
+
+        self.set_status(response['code'])
+        self.write(response)
+
+    @tornado.gen.coroutine
+    def put(self, token):
+        """Refresh the user session token
+
+        :param token: the session token
+        :type token: str
+        """
+
+        response = {}
+
+        try:
+            token = Session(token=token).update()
+            response = make_response(data=token)
+        except Exception as e:
+            response = e.response()
+
+        self.set_status(response['code'])
+        self.write(response)
+
+    @tornado.gen.coroutine
+    def delete(self, token):
+        """Delete the user session token
+
+        :param token: the session token
+        :type token: str
+        """
+
+        response = {}
+
+        try:
+            token = Session(token=token).delete()
+            response = make_response(data=token)
+        except Exception as e:
+            response = e.response()
+
+        self.set_status(response['code'])
+        self.write(response)
+
+
 class UsersResourceV1(tornado.web.RequestHandler):
     """Users REST API resource handler class
     """
@@ -64,4 +150,5 @@ class UsersResourceV1(tornado.web.RequestHandler):
         except Exception as e:
             response = e.response()
 
+        self.set_status(response['code'])
         self.write(response)

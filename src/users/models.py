@@ -145,7 +145,7 @@ class Session(object):
         if session is None:
             raise exceptions.NotFoundError('session token')
         else:
-            r.setex(self.token, session)
+            r.setex(self.token, session, 3600)
 
         return {'token': self.token}
 

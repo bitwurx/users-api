@@ -281,7 +281,7 @@ def test_Session_update_resets_existing_session(MockRedis, mock_users):
     session = Session(token='abc123')
     assert session.update() == {'token': 'abc123'}
     MockRedis().get.assert_called_with('abc123')
-    MockRedis().setex.assert_called_with('abc123', '{"user_id": 12345}')
+    MockRedis().setex.assert_called_with('abc123', '{"user_id": 12345}', 3600)
 
 
 @mock.patch('users.models.users')

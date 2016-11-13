@@ -177,7 +177,7 @@ def test_SessionsResourceV1_post_creates_user_session(MockSession):
 
 
 @mock.patch('users.api.Session')
-def test_SessionsResourceV1_post_sends_decode_error_on_exception(MockSession):
+def test_SessionsResourceV1_post_sends_decode_error(MockSession):
     request = mock.Mock()
     request.body = b'[{'
     resource = SessionsResourceV1(mock.MagicMock(), request)
@@ -214,6 +214,28 @@ def test_SessionsResourceV1_post_sends_validation_error_on_exception(
     assert response['status'] == 'error'
     assert response['data'] == 'ValidationError'
     assert response['message'] == json.dumps(errors)
+
+
+@mock.patch('users.api.Session')
+def test_SessionsResourceV1_post_sends_credential_error_with_bad_password(
+        MockSession):
+    def mock_create(*args, **kwargs):
+        raise BadRequestError('incorrect username or password',
+                              'InvalidCredentialsError')
+
+    MockSession().create.side_effect = mock_create
+    request = mock.Mock()
+    request.body = b'{}'
+    resource = SessionsResourceV1(mock.MagicMock(), request)
+    resource.write = mock.Mock()
+    resource.set_status = mock.Mock()
+    resource.post('')
+    response = resource.write.mock_calls[0][1][0]
+    resource.set_status.assert_called_with(400)
+    assert response['code'] == 400
+    assert response['status'] == 'error'
+    assert response['data'] == 'InvalidCredentialsError'
+    assert response['message'] == 'incorrect username or password'
 
 
 @mock.patch('users.api.Session')

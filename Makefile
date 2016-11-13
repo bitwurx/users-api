@@ -9,3 +9,4 @@ clean:
 	@find * -name ".python_history" | xargs rm -rf
 	@find * -name "build"           | xargs rm -rf
 	@find * -name "dist"            | xargs rm -rf
+	@find * -name "*.retry"         | xargs rm -rf

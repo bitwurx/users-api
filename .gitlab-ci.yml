@@ -1,7 +1,6 @@
 stages:
   - build
   - test
-  - docker_push
   - deploy
 
 build:
@@ -9,13 +8,22 @@ build:
   script:
   - docker build -t registry.gitlab.com/project-alicia/users .
 
-test:
+unit_test:
   stage: test
   script:
-  - docker run -i -e ARANGO_ROOT_PASSWORD=$ARANGO_ROOT_PASSWORD registry.gitlab.com/project-alicia/users tox
+  - docker run -i -e ARANGO_ROOT_PASSWORD=$ARANGO_ROOT_PASSWORD registry.gitlab.com/project-alicia/users tox -c src/tox.ini -e dev
+
+integration_test:
+  stage: test
+  script:
+  - docker run --name arangodb -e ARANGO_ROOT_PASSWORD=$ARANGO_ROOT_PASSWORD arangodb
+  - docker run --name redis redis
+  - docker run -i -e ARANGO_ROOT_PASSWORD=$ARANGO_ROOT_PASSWORD --link arangodb --link redis registry.gitlab.com/project-alicia/users tox -c src/tox.ini -e stage
+  only:
+  - master
 
 docker_push:
-  stage: docker_push
+  stage: deploy
   script:
   - docker push registry.gitlab.com/project-alicia/users
   only:
